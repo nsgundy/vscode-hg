@@ -10,7 +10,7 @@ const localize = nls.loadMessageBundle();
 export interface IGroupStatusesParams {
 	respositoryRoot: string
 	statusGroups: IStatusGroups,
-	fileStatuses: IFileStatus[],
+	fileStatuses: IFileStatus[] | undefined,
 	repoStatus: IRepoStatus,
 	resolveStatuses: IFileStatus[] | undefined,
 }
@@ -166,15 +166,17 @@ export function groupStatuses({
 
 	const seenUriStrings: Map<string, boolean> = new Map();
 
-	for (const raw of fileStatuses) {
-		const uri = Uri.file(path.join(respositoryRoot, raw.path));
-		const uriString = uri.toString();
-		seenUriStrings.set(uriString, true);
-		const renameUri = raw.rename ? Uri.file(path.join(respositoryRoot, raw.rename)) : undefined;
-		const resolveFile = resolveStatuses && resolveStatuses.filter(res => res.path === raw.path)[0];
-		const mergeStatus = resolveFile ? toMergeStatus(resolveFile.status) : MergeStatus.NONE;
-		const [resources, group, status] = chooseResourcesAndGroup(uriString, raw.status, mergeStatus, !!raw.rename);
-		resources.push(new Resource(group, uri, status, mergeStatus, renameUri));
+	if (fileStatuses) {
+		for (const raw of fileStatuses) {
+			const uri = Uri.file(path.join(respositoryRoot, raw.path));
+			const uriString = uri.toString();
+			seenUriStrings.set(uriString, true);
+			const renameUri = raw.rename ? Uri.file(path.join(respositoryRoot, raw.rename)) : undefined;
+			const resolveFile = resolveStatuses && resolveStatuses.filter(res => res.path === raw.path)[0];
+			const mergeStatus = resolveFile ? toMergeStatus(resolveFile.status) : MergeStatus.NONE;
+			const [resources, group, status] = chooseResourcesAndGroup(uriString, raw.status, mergeStatus, !!raw.rename);
+			resources.push(new Resource(group, uri, status, mergeStatus, renameUri));
+		}
 	}
 
 	// it is possible for a clean file to need resolved
